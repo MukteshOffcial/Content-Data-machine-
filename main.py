@@ -1,10 +1,27 @@
 import os
 from fastmcp import FastMCP
+from fastmcp.server.auth import StaticTokenVerifier
 
-# Create our MCP server
-mcp = FastMCP("Instagram Data Machine")
+# Load authentication token from Render
+auth_token = os.environ.get("MCP_AUTH_TOKEN")
 
-# First test tool
+if not auth_token:
+    raise RuntimeError("MCP_AUTH_TOKEN is required")
+
+# Configure authentication
+auth = StaticTokenVerifier(
+    tokens={
+        auth_token: {
+            "client_id": "claude",
+            "scopes": [],
+        }
+    }
+)
+
+# Create protected MCP server
+mcp = FastMCP("Instagram Data Machine", auth=auth)
+
+# Test tool
 @mcp.tool
 def hello_machine() -> str:
     """
@@ -12,7 +29,7 @@ def hello_machine() -> str:
     """
     return "Instagram Data Machine is online and working!"
 
-# Start the server
+# Start server
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     mcp.run(
